@@ -75,7 +75,7 @@ const AppRoutes = () => {
         />
         <Route 
           path="/admin" 
-          element={<><AdminNavbar/><Admin /></>} 
+          element={<PrivateRoute><AdminNavbar/><Admin /></PrivateRoute>} 
         />
         <Route
           path="/dashboard"

@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { startCheckout } from '../utils/checkout';
 
 // Import the new detailed data
 import { riceDetailsData } from './data'; // Adjust path if data.js is elsewhere
@@ -80,6 +81,8 @@ const Product = () => {
     }));
   };
 
+  const [isPaying, setIsPaying] = useState(false);
+
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     if (!user) {
@@ -93,7 +96,6 @@ const Product = () => {
     const orderPayload = {
       productName: selectedProduct.name,
       description: selectedProduct.description,
-      totalPrice: selectedProduct.price * userDetails.quantity,
       quantity: userDetails.quantity,
       userDetails: {
         name: userDetails.name,
@@ -102,30 +104,26 @@ const Product = () => {
         address: userDetails.address,
       }
     };
-    try {
-      const token = await user.getIdToken();
-      if (!token) {
-        toast.error('Authentication error. Please log in again.');
-        return;
-      }
-      const response = await fetch('http://localhost:5000/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(orderPayload),
-      });
-      if (response.ok) {
-        toast.success('Order placed successfully!');
+
+    setIsPaying(true);
+    await startCheckout({
+      user,
+      orderPayload,
+      onSuccess: () => {
+        toast.success('Payment successful! Order placed.');
         setShowForm(false);
+        setIsPaying(false);
         setUserDetails({ name: '', email: user?.email || '', phone: '', address: '', quantity: 1 });
-      } else {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to place order.' }));
-        console.error("Error placing order (backend response):", errorData);
-        toast.error(`Failed to place order: ${errorData.message || response.statusText || 'Unknown server error'}`);
-      }
-    } catch (error) {
-      console.error('Network Error or other error during handleSubmitOrder:', error);
-      toast.error('Network error or issue placing order. Please try again.');
-    }
+      },
+      onError: (message) => {
+        toast.error(message);
+        setIsPaying(false);
+      },
+      onCancelled: () => {
+        toast.info('Payment cancelled.');
+        setIsPaying(false);
+      },
+    });
   };
 
   const handleCloseForm = () => setShowForm(false);
@@ -305,7 +303,7 @@ const Product = () => {
                   <input type="number" id="form_quantity" name="quantity" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" value={userDetails.quantity} onChange={handleFormInputChange} min="1" required />
                 </div>
                 <p className="text-lg font-semibold text-right text-gray-800">Total: ₹{(selectedProduct.price * userDetails.quantity).toFixed(2)}</p>
-                <button type="submit" className="w-full bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-colors duration-300 font-semibold shadow-md"> Place Order </button>
+                <button type="submit" disabled={isPaying} className="w-full bg-green-600 text-white py-2.5 rounded-lg hover:bg-green-700 transition-colors duration-300 font-semibold shadow-md disabled:opacity-60"> {isPaying ? 'Processing payment...' : 'Pay & Place Order'} </button>
               </form>
             </div>
           </div>

@@ -2,27 +2,27 @@
 import React, { useEffect, useState } from "react";
 import { Table, Container, Alert, Button } from "react-bootstrap";
 import axios from "axios";
-// If you implement admin auth later, you might need useAuth here too.
-// import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { API_URL } from "../config";
 
 const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState("");
-  // const { user } = useAuth(); // If admin auth needed for fetching/updating
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchOrders = async () => {
-      setError(null); // Clear previous errors
+      setError(null);
+      if (!user) {
+        setError("You must be logged in as an admin to view this page.");
+        return;
+      }
       try {
-        // **** MODIFIED ENDPOINT ****
-        // Call the new admin-specific endpoint that returns all orders
-        const response = await axios.get("http://localhost:5000/api/admin/all-orders");
-        // For admin auth later, you might add headers:
-        // const token = await user.getIdToken();
-        // const response = await axios.get("http://localhost:5000/api/admin/all-orders", {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
+        const token = await user.getIdToken();
+        const response = await axios.get(`${API_URL}/api/admin/all-orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
         if (Array.isArray(response.data)) {
           setOrders(response.data);
@@ -49,21 +49,17 @@ const Admin = () => {
     };
 
     fetchOrders();
-  }, []); // Removed `user` from dependency array if not used for fetching yet
+  }, [user]);
 
   // Mark order as completed
   const handleComplete = async (orderId) => {
     setError(null); // Clear previous errors
     setSuccess(""); // Clear previous success
     try {
-      // **** POTENTIAL SECURITY ISSUE FOR PUT REQUEST ****
-      // This PUT request to mark an order complete should also be secured.
-      // If any admin can mark any order complete, you'd ideally send an admin token.
-      // const token = await user.getIdToken(); // If admin needs to be authenticated for this action
-      // await axios.put(`http://localhost:5000/api/orders/${orderId}`, {}, { // Sending empty object as data if not needed
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
-      await axios.put(`http://localhost:5000/api/orders/${orderId}`); // Current unprotected version
+      const token = await user.getIdToken();
+      await axios.put(`${API_URL}/api/orders/${orderId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       setOrders((prevOrders) =>
         prevOrders.map((order) =>

@@ -5,6 +5,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FaShoppingCart } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { startCheckout } from '../utils/checkout';
 
 const Cart = () => {
   const { cart, removeFromCart, clearCart, getTotalPrice } = useCart();
@@ -87,12 +88,9 @@ const Cart = () => {
 
     const orderPayload = {
       cartItems: cart.map(item => ({
-        productId: item.id,
         name: item.name,
-        price: item.price,
         quantity: item.quantity,
       })),
-      totalPrice: getTotalPrice(),
       userDetails: {
         name: userDetails.name,
         email: userDetails.email,
@@ -102,46 +100,26 @@ const Cart = () => {
     };
 
     setIsLoading(true);
-    try {
-      const token = await user.getIdToken();
-
-      if (!token) {
-        toast.error("Authentication token is missing. Please log in again.");
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch('http://localhost:5000/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderPayload),
-      });
-
-      if (response.ok) {
-        toast.success('Order placed successfully!');
+    await startCheckout({
+      user,
+      orderPayload,
+      onSuccess: () => {
+        toast.success('Payment successful! Order placed.');
         clearCart();
-        setUserDetails({
-          name: '',
-          email: user?.email || '',
-          phone: '',
-          address: '',
-        });
+        setUserDetails({ name: '', email: user?.email || '', phone: '', address: '' });
         setShowOrderForm(false);
         setShowCart(false);
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error occurred."}));
-        console.error("Failed to place order from cart (backend error):", errorData);
-        toast.error(`Failed to place order: ${errorData.message || 'Please try again.'}`);
-      }
-    } catch (error) {
-      console.error('Network Error or other error placing order from cart:', error);
-      toast.error('Network error occurred. Please ensure the server is running and try again.');
-    } finally {
-      setIsLoading(false);
-    }
+        setIsLoading(false);
+      },
+      onError: (message) => {
+        toast.error(message);
+        setIsLoading(false);
+      },
+      onCancelled: () => {
+        toast.info('Payment cancelled.');
+        setIsLoading(false);
+      },
+    });
   };
 
   return (

@@ -1,6 +1,7 @@
 // src/components/OrderHistory.js
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { API_URL } from '../config';
 // If you have Link for navigation in your actual app, uncomment it
 // import { Link } from 'react-router-dom'; 
 
@@ -44,7 +45,7 @@ const OrderHistory = () => {
         }
         // console.log('OrderHistory Effect: Successfully retrieved Firebase ID token.');
 
-        const response = await fetch('http://localhost:5000/api/orders', {
+        const response = await fetch(`${API_URL}/api/orders`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
