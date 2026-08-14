@@ -35,7 +35,7 @@ function distributeSales(totalAmount, numSegments) {
   if (numSegments === 1) return [totalAmount];
 
   const segmentSales = Array(numSegments).fill(0);
-  let remainingAmount = totalAmount;
+ 
 
   // Distribute fairly, then add random small variations
   const basePerSegment = totalAmount / numSegments;
@@ -182,7 +182,7 @@ const StockHistory = () => {
                 let iterMonth = new Date(SALES_START_DATE);
                 while(iterMonth <= simulatedCurrentJsDate) {
                     const monthYearKey = `${MONTH_NAMES_SHORT[iterMonth.getMonth()]} ${iterMonth.getFullYear()}`;
-                     if (monthlyAggregated.hasOwnProperty(monthYearKey) || iterMonth.getMonth() === simulatedCurrentJsDate.getMonth() && iterMonth.getFullYear() === simulatedCurrentJsDate.getFullYear() ) { // ensure current month is added even if no sales yet.
+                     if (monthlyAggregated.hasOwnProperty(monthYearKey) || (iterMonth.getMonth() === simulatedCurrentJsDate.getMonth() && iterMonth.getFullYear() === simulatedCurrentJsDate.getFullYear()) ) { // ensure current month is added even if no sales yet.
                         displayLabels.push(MONTH_NAMES_SHORT[iterMonth.getMonth()]);
                         cumulativeSales += (monthlyAggregated[monthYearKey] || 0);
                         displayCumulativeValues.push(cumulativeSales);
